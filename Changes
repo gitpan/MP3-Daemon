@@ -15,6 +15,19 @@ Revision history for Perl extension MP3::Daemon
       use syslog or some other logging mechanism?
       `perldoc Sys::Syslog`
 
+0.62  Sat Dec 29 01:49:51 PST 2001
+    - forgot to include an updated Changes file :-P
+
+0.61  Sat Dec 29 01:47:34 PST 2001
+    - added support for `mp3 loop`
+      which lets you change the playlist's looping behaviour.
+      Valid values are "all", "single", and "off".
+    - helpful information will be displayed via the
+      following commands.
+      mp3 -h
+      mp3 --help
+      mp3 help
+
 0.60  Wed Jul 25 13:58:39 PDT 2001
     - fixed a serious bug in the randomization code that could
       cause bad things to happen.
