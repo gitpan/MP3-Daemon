@@ -17,9 +17,18 @@ Revision history for Perl extension MP3::Daemon
       `perldoc Sys::Syslog`
     + put on freshmeat
 
+0.52  Mon Jul  9 07:26:45 PDT 2001
+    - added a random play feature to MP3::Daemon::Simple
+      [ requested by Sean E McSherry ]
+    - added 'rand' command to bin/mp3
+    - documented it
+    - changed permission on socket to 0600 (instead of 0700).
+      There's no need to execute it, after all.
+
 0.51  Mon Jun  4 21:19:06 MDT 2001
     - implemented &MP3::Daemon::idle method, and
       wrote POD for it.
+      [ for Patrik Tschudin ]
 
 0.50
     - in Daemon.pm, add $SIG{__DIE__} to the list of signals

@@ -12,9 +12,8 @@ use POSIX qw(setsid);
 # client/server communication
 use IO::Socket;
 use IO::Select;
-#use Fcntl;
 
-$VERSION = 0.51;
+$VERSION = 0.52;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -36,7 +35,7 @@ sub new {
         Local  => $self->{socket_path},
         Listen => SOMAXCONN,
     ) or die($!);
-    chmod(0700, $self->{socket_path});
+    chmod(0600, $self->{socket_path});
     #fcntl($self->{server}, F_SETFL, O_NONBLOCK);
 
     # player
@@ -471,4 +470,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.17 2001/06/05 04:47:27 beppu Exp $
+# $Id: Daemon.pm,v 1.18 2001/07/09 14:33:28 beppu Exp $

@@ -91,6 +91,7 @@ my %alias = (
     prev  => 'prev',
     q     => 'quit',
     quit  => 'quit',
+    rand  => 'rand',
     rw    => 'rw',
     s     => 'stop',
     stop  => 'stop',
@@ -159,6 +160,7 @@ Other controls
     mp3 jump 820
     mp3 pause
     mp3 stop
+    mp3 rand
 
 Getting information
 
@@ -287,6 +289,12 @@ this regex.  Of course, one may use grep, instead.
 
 =back
 
+=item rand
+
+Calling this with no parameters toggles the random play feature.
+Randomness can be set to be specifically "on" or "off" by
+passing the scalar "on" or "off" to this method.
+
 =item quit
 
 This unloads the MP3::Daemon::Simple that was automagically spawned
@@ -299,6 +307,10 @@ when you first invoked mp3.
 Saving playlists
 
     mp3 ls -f | perl -pe 's/.*\d+ //' > playlist
+
+Loading a playlist
+
+    xargs mp3 add < playlist
 
 Deleting songs 6..12
 
@@ -315,6 +327,7 @@ Playing part of an mp3 over and over again
 Monitoring the progress of the daemon
 
     watch mp3 time
+    watch mp3 info
 
 =head1 FILES
 

@@ -8,7 +8,7 @@ use File::Basename;
 
 use vars qw(@ISA $VERSION);
 @ISA     = 'MP3::Daemon';
-$VERSION = 0.06;
+$VERSION = 0.07;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -16,8 +16,9 @@ sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
 
-    $self->{playlist} = [ ];
-    $self->{n}        = undef,
+    $self->{playlist} = [ ];    # list of mp3s
+    $self->{n}        = undef,  # index into playlist
+    $self->{random}   = 0;      # play random songs? or not.
 
     return $self;
 }
@@ -38,6 +39,7 @@ sub new {
 *_info  = \&info;
 *_time  = \&time;
 *_quit  = \&quit; 
+*_rand  = \&rand;
 
 # playlist entry indices
 #_______________________________________
@@ -74,6 +76,7 @@ sub play {
 #_______________________________________
 sub next {
     my $self = shift;
+    if ($self->{random}) { $self->random(); return }
     my $pl   = $self->{playlist};
     my $end  = scalar(@$pl) - 1;
     my $n    = $self->{n};
@@ -278,7 +281,7 @@ sub ls {
     my $l = defined($opt{l}) 
         ? \&ls_long_entry
         :  &ls_short_entry_factory($attr);
-    for ($i =0 ; $i < scalar(@$pl); $i++) {
+    for ($i = 0 ; $i < scalar(@$pl); $i++) {
         defined($re) && do { $pl->[$i][TITLE] =~ /$re/ || next };
         if ($i == $n) {
             $_ = $l->($i, $pl->[$i]);
@@ -309,6 +312,9 @@ sub info {
             $format, $mp3_attribute, $player->$mp3_attribute()
         );
     }
+    printf $client ($format, "state", 
+        (qw(stopped paused playing))[$player->state()]);
+    printf $client ($format, "random", $self->{random});
     $self->time;
 }
 
@@ -325,6 +331,45 @@ sub time {
     printf $client ($format, "remaining", $f->[3] . " seconds");
     printf $client ($format, "total", $f->[2] + $f->[3] . " seconds");
     printf $client ($format, "track", $self->{n});
+}
+
+# ^
+#_______________________________________
+sub rand {
+    my $self    = shift;
+    my $client  = $self->{client};
+    my $setting = shift || ("on", "off")[$self->{random}];
+
+    if ($setting eq "off") {
+        $self->{random} = 0;
+        *_next = \&next;
+        *_prev = \&prev;
+        print $client "random play off\n";
+    } elsif ($setting eq "on") {
+        $self->{random} = 1;
+        *_next = \&random;
+        *_prev = \&random;
+        print $client "random play on\n";
+    } else {
+        print $client qq("$setting" is not a valid random state.\n);
+    }
+}
+
+# *
+#_______________________________________
+sub random {
+    my $self = shift;
+    my $pl   = $self->{playlist};
+    my $n    = scalar @$pl;
+
+    if ($n) {
+
+        # prevent an mp3 from being played twice in a row
+        do { $n = int(rand($n)) } until ($n != $self->{n});
+
+        $self->{n} = $n;
+        $self->{player}->load($pl->[$n][URL]);
+    }
 }
 
 # __
@@ -548,6 +593,12 @@ this regex.  Of course, one may use grep, instead.
 
 =back
 
+=item rand
+
+Calling this with no parameters toggles the random play feature.
+Randomness can be set to be specifically "on" or "off" by
+passing the scalar "on" or "off" to this method.
+
 =item quit
 
 This unloads the MP3::Daemon::Simple that was automagically spawned
@@ -577,4 +628,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.6 2001/02/14 22:45:53 beppu Exp $
+# $Id: Simple.pm,v 1.7 2001/07/09 14:33:28 beppu Exp $
