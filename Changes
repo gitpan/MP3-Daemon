@@ -1,0 +1,59 @@
+Revision history for Perl extension MP3::Daemon
+
++ means it still needs to be done
+- means it's done
+
+0.05
+    - made MP3::Daemon a base-class for others to subclass.
+    - made MP3::Daemon::Simple what MP3::Daemon used to be
+    - updated /bin/mp3 to use M:D:S
+    - changed ./ex to default to use M:D:Pimp.
+      If you want to experiment with M:D:Simple, run it as
+      ./ex Simple
+
+0.04  Tue Jan 30 04:41:16 MST 2001
+    - wrote POD for bin/mp3 and Daemon.pm
+    - changed the behaviour of del such that it'll go loop back to the
+      beginning if the last track is deleted.
+    - fixed a bug where "mp3 play 0" would be interpreted as 
+      "mp3 play" which is not the same thing.
+    - changed the format of the info that info() and time()
+      return to be more human-readable.
+    - del can now handle negative indices
+    - made pod2usage output to STDOUT.  I didn't realize
+      it was going to STDERR.
+    - play now knows about negative indices, too
+
+0.03  Sun Jan 28 00:26:48 MST 2001
+    - changed the behaviour of play
+      only takes 0 or 1 parameter
+      if parameter is a non-negative integer, play the track at that index,
+      else add it to the end of the playlist and start playing it.
+    - changed the behaviour of del
+      no parameters deletes the last track from the playlist.
+      multiple parameters deletes multiple tracks
+    - ls now indicates current track with /^>/
+    - added time() which tells you
+      time elapsed
+      time left
+      time total
+    - added a bunch of shortcuts in bin/mp3
+    - removed debugging noise
+    - del() correctly reindexes itself
+    - made it so that only certain methods can be invoked
+      by clients.
+
+0.02  Tue Jan 23 20:57:31 MST 2001
+    - fleshed out
+    - added bin/mp3 which is the client
+    - Tue Jan 23 10:03:58 MST 2001
+      Got back to doing some serious work on this.
+    - Using IO::Socket::UNIX for communication.
+    - Made the server non-blocking.
+    - added all sorts of commands
+    - fixed all kinds of bugs
+    - ff and rw
+
+0.01  Thu Dec 14 05:34:11 MST 2000
+    - original version;
+

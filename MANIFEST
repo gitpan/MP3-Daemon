@@ -1,0 +1,10 @@
+Changes
+Daemon.pm
+Daemon/Simple.pm
+MANIFEST
+MANIFEST.SKIP
+Makefile.PL
+README
+bin/mp3
+ex
+test.pl
