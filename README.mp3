@@ -10,7 +10,7 @@ SYNOPSIS
 
         mp3 add Blue_Six-Conga_Lounge_Mix.mp3
         mp3 add /c/mp3/*.mp3
-        mp3 add http://www.testpress.com/mp3/07202000_papp.mp3
+        mp3 add http://132.216.57.19:15005/3/motw141.mp3
         mp3 del 0 2 4 -1
 
     Playing from the list
@@ -39,8 +39,8 @@ SYNOPSIS
         mp3 quit
 
 DESCRIPTION
-    I have combined my favourite features from dcd, cdcd, and mpg123 to
-    create Yet Another Front-End For Mpg123. (YAFEFM)
+    I have combined my favourite features of dcd, cdcd, and mpg123 to create
+    Yet Another Front-End For Mpg123. Mine is special, though. ;-)
 
     From dcd, I derived the ability to fork itself into the background.
 

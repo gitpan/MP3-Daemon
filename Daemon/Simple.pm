@@ -7,8 +7,8 @@ use Getopt::Std;
 use File::Basename;
 
 use vars qw(@ISA $VERSION);
-@ISA     = 'MP3::Daemon';
-$VERSION = 0.08;
+@ISA     = qw(MP3::Daemon);
+$VERSION = 0.09;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -295,7 +295,7 @@ sub ls {
     }
 }
 
-# ?
+# i
 #_______________________________________
 sub info {
     my $self   = shift;
@@ -335,7 +335,7 @@ sub time {
     printf $client ($format, "track", $self->{n});
 }
 
-# ^
+# ?
 #_______________________________________
 sub rand {
     my $self    = shift;
@@ -630,4 +630,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.8 2001/07/11 19:01:36 beppu Exp $
+# $Id: Simple.pm,v 1.10 2001/07/23 16:18:06 beppu Exp $

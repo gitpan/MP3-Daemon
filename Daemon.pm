@@ -13,7 +13,7 @@ use POSIX qw(setsid);
 use IO::Socket;
 use IO::Select;
 
-$VERSION = 0.53;
+$VERSION = 0.54;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -464,4 +464,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.19 2001/07/11 19:01:36 beppu Exp $
+# $Id: Daemon.pm,v 1.20 2001/07/23 16:18:05 beppu Exp $

@@ -13,14 +13,18 @@ if ($@) {
 # spawn an MP3::Daemon::Simple if necessary, and 
 # return a client handle always
 sub init {
-    my $conf_dir = "$ENV{HOME}/.mp3";
+    my $conf_dir    = "$ENV{HOME}/.mp3";
     my $socket_path = "$conf_dir/mp3_socket";
+    my $pid_file    = "$conf_dir/mp3.pid";
 
     unless (-S $socket_path) {
         unless (-d $conf_dir) {
             mkdir($conf_dir, 0755) || die($!);
         }
         my $pid = MP3::Daemon::Simple->spawn($socket_path);
+        open(PID_FILE, "> $pid_file") || die($!);
+        print PID_FILE "$pid\n";
+        close(PID_FILE);
     }
     return MP3::Daemon::Simple->client($socket_path);
 }
@@ -144,7 +148,7 @@ Building the playlist
 
     mp3 add Blue_Six-Conga_Lounge_Mix.mp3
     mp3 add /c/mp3/*.mp3
-    mp3 add http://www.testpress.com/mp3/07202000_papp.mp3
+    mp3 add http://132.216.57.19:15005/3/motw141.mp3
     mp3 del 0 2 4 -1
 
 Playing from the list
@@ -174,8 +178,8 @@ Unloading the daemon
 
 =head1 DESCRIPTION
 
-I have combined my favourite features from dcd, cdcd, and mpg123 to
-create Yet Another Front-End For Mpg123.  (YAFEFM)
+I have combined my favourite features of dcd, cdcd, and mpg123 to
+create Yet Another Front-End For Mpg123.  Mine is special, though.  ;-)
 
 From dcd, I derived the ability to fork itself into the background.
 

@@ -17,6 +17,12 @@ Revision history for Perl extension MP3::Daemon
       `perldoc Sys::Syslog`
     + put on freshmeat
 
+0.54  Mon Jul 23 09:23:34 PDT 2001
+    - made bin/mp3 create a pid_file for the server process.
+    - added a public service announcement to INSTALL
+      regarding the proper configuration of the CPAN shell
+    - minor code and doc tweaks
+
 0.53  Wed Jul 11 12:00:07 PDT 2001
     - leave statfreq() alone when instantiating A:P:MPG123.
       let subclasses define statfreq policy, instead.
@@ -35,7 +41,7 @@ Revision history for Perl extension MP3::Daemon
       wrote POD for it.
       [ for Patrik Tschudin ]
 
-0.50
+0.50  (sourceforge.net special collectors' edition release)
     - in Daemon.pm, add $SIG{__DIE__} to the list of signals
       that gets intercepted.
     - move to 0.50, because half of it is done.
