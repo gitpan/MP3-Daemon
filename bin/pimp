@@ -17,8 +17,13 @@ my $mypl = \@nrpl; # arrayref to be repointed to @rnpl if $optn{rand}
 my @attz = ('name', 'arti', 'titl', 'leng', 'kbit', 'freq', 'rvol', 'wate');
 my @argz = @ARGV; my $char = ""; my $stat = ""; my $fram = ""; my $frml = "";
 my @temp = (); my $lfrm = ""; my $mixf = "chngmixr"; # || "aumix"
-my $argu = ""; my @subz = (); my $sarg = "";
+my $argu = ""; my @subz = (); my $sarg = ""; my $top = 2.0; my $bot = 4.0; #2/8?
 my $volu = ""; my $pvol = ""; my $bvol = ""; my $curs = 0;  my $delt = 0;
+if (!$plyr && @argz) { 
+	$plyr = `ps ax`;
+	if ($plyr =~ /\smpg123\s/i) { die "MPG123 process already running!  Can't connect!!!"; }
+	else { $plyr = new Audio::Play::MPG123; }
+}
 if (!@argz) { push(@argz,"h"); push(@argz,"x"); } # Help && eXit if no argz 
 my %optn = ('loop' => 1, 'dela' => 0, 'rand' => 0, 'uniq' => 7);
 	# Options: LoopPL?, Delete song from PL after play?, Do RandRoll?
@@ -72,11 +77,9 @@ while ($argu !~ /^-?(x|q|exit)$/i) {
 				$frml = $plyr->{frame}->[1];
 				$lfrm = $fram + $frml;
 #				print "$fram,$frml";	# gets here statfreq uently
-			}
+			} 
 		}
 	}
-	unless ($plyr) { $plyr = new Audio::Play::MPG123; }
-	unless ($plyr) { die "Can't open a connection to MPG123!!!"; }
 #Vol					PCM|Relative, +/- volume (%?) from actual
 	if ($argu =~ /^-?v([pPrR]?)([-+]?)(\d*)(\%)?/i) {
 		@subz = ( $1, $2, $3, $4 );
@@ -168,13 +171,15 @@ while ($argu !~ /^-?(x|q|exit)$/i) {
 					print "$lust[$rnpl[$i]]->{'name'}\n"; # print lust (| more)?
 				} 
 			} elsif ($subz[0] =~ /^pl/i) { # add range option
-				print "PL:"; 
+				print "PL:\n"; 
 				for(my $i=0;$i<scalar(@$mypl);$i++) { 
-					print "$i:"; 
-					print "$lust[${$mypl}[$i]]->{'name'}"; # print lust (| more)?
-					if ($curs == $i) { print " *NowPlaying*"; } 
+					$subz[8] = $lust[${$mypl}[$i]]->{'name'};
+					$subz[8] =~ s!^.*/!!; # $subz[8] =~ s!^.*?/mp3/!!i;
+					printf "%2d:", $i;
+					if ($curs != $i) { print " "; }	else { print "*"; }
+					printf "%-76.76s", $subz[8]; # print lust (| more)?
 					print "\n";
-				  last if $i > 15;
+				  last if $i > 31; # safety measure in case it runs away
 				} 
 			} elsif ($subz[0] =~ /^p/i) { 
 				printf "P:%05.2f\% ", ($fram/$lfrm) * 100; # % of song plyd
@@ -244,7 +249,7 @@ while ($argu !~ /^-?(x|q|exit)$/i) {
 				}
 				close LUST;
 				if ($subz[0] =~ /l/i) { 
-					unshift(@argz, "p"); 
+					unshift(@argz, "p$curs"); 
 					if (-f $tmpl) { $svpl = $tmpl; }
 				}
 				if (!-f $svpl && -f $tmpl) { $svpl = $tmpl; }
@@ -253,7 +258,7 @@ while ($argu !~ /^-?(x|q|exit)$/i) {
 		} elsif ($subz[0] =~ /r/i) {	#fisher_yates_shuf Cookbook P.121
 			for(my $i=@nrpl;--$i; ) {	# w/ slight modification for 
 				my $j = int rand($i);	# array values xchng
-				next if $i == $j;
+				next if $i == $j;		# to werk
 				($nrpl[$i],$nrpl[$j]) = ($nrpl[$j],$nrpl[$i]);
 			}
 		}
@@ -274,7 +279,7 @@ while ($argu !~ /^-?(x|q|exit)$/i) {
 						}
 						$volu = int($volu*$lust[${$mypl}[$curs]]->{'rvol'}/100); 
 						unshift(@argz, "v$volu");
-						if ($plyr->tpf) { $plyr->statfreq(7/8/$plyr->tpf); }
+						if ($plyr->tpf) { $plyr->statfreq($top/$bot/$plyr->tpf); }
 #						if ($plyr->tpf) { $plyr->statfreq($plyr->tpf); }
 						else { $plyr->statfreq(1); }						 
 						$i = scalar(@$mypl);
@@ -361,8 +366,6 @@ while ($argu !~ /^-?(x|q|exit)$/i) {
 			$optn{'rand'} ^= 1; 
 			if ($optn{'rand'}) {
 				RsetRand();
-#				if (!$optn{'uniq'}) { $optn{'uniq'} = 1; }
-#				if ($#urpl < (3*$optn{'uniq'})) {
 				if (!$optn{'uniq'} || $#urpl < (3*$optn{'uniq'})) {
 					print "!ERROR! Unique threshold: $optn{'uniq'} must be greater than zero ",
 							"&& less than 1/4th of the currently loaded PL size!  Resetting to 1...\n";
@@ -377,8 +380,8 @@ print $#urpl, " ", int($#urpl/4), "\n";
 				@rnpl = ();
 				$curs = 0;
 				$mypl = \@nrpl;
-				unshift(@argz, "p"); 
 			}
+			unshift(@argz, "p$curs"); 
 		} elsif ($subz[0] =~ /u(\d+)/i) { 
 			if ($1 && $1 <= int(@nrpl/4)) { $optn{'uniq'} = $1; }
 			else { print "!ERROR! Unique threshold: $1 must be greater than zero ",
@@ -412,66 +415,12 @@ print scalar(@nrpl), " ", int(@nrpl/4), "\n";
 		print "                              `pimp -pllMyFirstPL.plf`;\n";
 		print "  You can also directly load playlists created with mms.\n";
 	}
+# Yiqs!  CPU usage was 96% with no sleeping in here!  Now it's only 2.9%  =)
+#	sleep(($top-1)/$bot); # sleep() doesn't werk for non-whole seconds! =(
+	select undef, undef, undef, (($top-1)/$bot); # but select does!
 #if ($argu) { print "Argu: $argu, ";	}
 }
 
 #$plyr->poll(1) until $plyr->state == 0;
 
 ReadMode(0);	# Restore normal Reads b4 exit
-
-__END__
-
-=head1 NAME
-
-pimp - Pip's Intergallactive Moosex Plaqueluster
-
-=head1 SYNOPSIS
-
-pimp [OPTION]...
-
-  Pip's Intergallactive Moosex Plaqueluster (Pip'sIMP [pimp]) Help:            
-   -h[elp]          this Help text, -(x|q|exit)         eXit pimp              
-   -v[(p|r)][+|-]<volume#>       set Volume (Pcm|Relative/song) to rel/abs vol#
-   -(n|l)(<song#>|/titlematch/)[c] set Next/Last song as # or titlematch [copy]
-   -t(f|l|t|n|pl|p|sp|sl|st|s|vp|v) sTatus Frmz,Left,Totl,songNum,PlaqueLust,  
-              Percentplayed,SecsPlayed,SecsLeft,SecsTotl,Songname,VolPcm,Volume
-   -pl(s|l|a|i<index#>:)[(o|f|r)][!][(a|n|/match/)]<PLfilename.plf> PlaqueLust 
-     Save,Load,Append,Ins<#>: Order,Filter,Rndmize [Not]AlphaNumeric/match/ PLF
-           *NOTE*  only -pl(s|l|a|i#:)<PLfilename.plf> werk so far!            
-   -p(<song#>|/titlematch/)    Play/Pause PLsong# or first matching title      
-   -s                          Stop                                            
-   -(f|r)(f|p)[+|-]<amount#>[%][/<fastPlaydivisor#>]        Fastfwd/Rewind in 
-         Frames(seconds are Dfalt) by +/- amount or fastPlay +/- amount/divisor
-   -j(n|l|b|m|e|f|r|h|t|song#|/titlematch/)        Jump to Next,Last,Beginning,
-        Middle,End,Ffwd,Rwnd,Head,Tail,Song# or ffwd/rwnd secs,next title match
-   -a(n|l|b|m|e|position#)[r:](<filename.mp3>|<mp3Directory>)   Add file(s) to 
-      current PL @ Nxt,Lst,Bgn,Mdl,End,Pos# Recurse mp3Dir or just add file.mp3
-   -o(l|d|r|u<threshold#>)    Options (toggles) Loop?,Delete song from PL after
-       playing,start Random rotation     set Unique thresh# for random rotation
-  
-   To Get Started Try           `echo /path/to/MyFavorite.mp3 > MyFirstPL.plf`;
-                                `pimp -pllMyFirstPL.plf`;
-    You can also directly load playlists created with mms.
-
-=head1 DESCRIPTION
-
-pimp will be an mpg123 front-end that uses the MP3::Daemon 
-framework...  some day.  For now, behold the original version
-in all its undaemonized glory.
-
-It's defining feature is the Pseudorandom Plaqueluster.  It's
-vintage pip.
-
-=head1 REQUIRES
-
-Audio::Play::MPG123, Term::ReadKey
-
-=head1 COPYRIGHT
-
-I am Free!
-
-=head1 AUTHOR
-
-pip <pip@binq.org>
-
-=cut

@@ -404,8 +404,11 @@ sub random {
     if ($len) {
 
         # prevent an mp3 from being played twice in a row
-        do { $n = int(rand($len)) } until ($n != $self->{n});
-
+	if ($len == 1) { 
+	    $n = 0; 
+	} else {
+	    do { $n = int(rand($len)) } until ($n != $self->{n});
+	}
         $self->{n} = $n;
         $self->{player}->load($pl->[$n][URL]);
     }
@@ -714,4 +717,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.13 2001/12/29 09:36:04 beppu Exp $
+# $Id: Simple.pm,v 1.14 2001/12/29 23:58:13 beppu Exp $

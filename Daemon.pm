@@ -13,7 +13,7 @@ use POSIX qw(setsid);
 use IO::Socket;
 use IO::Select;
 
-$VERSION = '0.62';
+$VERSION = '0.63';
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -267,9 +267,10 @@ This is just for setsid.
 =head1 DESCRIPTION
 
 MP3::Daemon provides a framework for daemonizing mpg123 and
-communicating with it using unix domain sockets.  It provides an event
-loop that listens for client requests and also polls the mpg123 player
-to monitor its state and change mp3s when one finishes.  
+communicating with this daemonized process using unix domain
+sockets.  It provides an event loop that listens for client
+requests and also polls the mpg123 player to monitor its state
+and change mp3s when one finishes.  
 
 The types of client requests available are not defined in
 MP3::Daemon.  It is up to subclasses of MP3::Daemon to flesh out
@@ -497,4 +498,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.24 2001/12/29 09:56:40 beppu Exp $
+# $Id: Daemon.pm,v 1.25 2001/12/29 23:58:13 beppu Exp $

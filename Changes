@@ -15,6 +15,11 @@ Revision history for Perl extension MP3::Daemon
       use syslog or some other logging mechanism?
       `perldoc Sys::Syslog`
 
+0.63  Sun Feb  3 09:34:23 PST 2002
+    - fixed a bug where if random playing were turned on
+      and the playlist only had one song, it would lock up.
+    - added latest bin/pimp
+
 0.62  Sat Dec 29 01:49:51 PST 2001
     - forgot to include an updated Changes file :-P
 
