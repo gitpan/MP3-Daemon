@@ -308,6 +308,14 @@ Sorting your playlist from shortest to longest mp3
 
     mp3 ls -l | sed 's/^>/ /' | sed 's/:/./' | sort -g -k 2
 
+Playing part of an mp3 over and over again
+
+    while true ; do mp3 j 1300 ; sleep 386 ; done
+
+Monitoring the progress of the daemon
+
+    watch mp3 time
+
 =head1 FILES
 
 =over 4

@@ -97,6 +97,10 @@ COMMANDS
     info    This sends back information about the current track.
 
     ls [-fl] [REGEX]
+            First, a warning -- I'm beginning to realize how GNU/ls became
+            so bloated. The "ls" interface should not be considered stable.
+            I'm still playing with it.
+
             This sends back a list of the titles of all mp3s currently in
             the playlist. The current track is denoted by a line matching
             the regexp /^>/.
@@ -127,6 +131,14 @@ COMMANDS
     Sorting your playlist from shortest to longest mp3
 
         mp3 ls -l | sed 's/^>/ /' | sed 's/:/./' | sort -g -k 2
+
+    Playing part of an mp3 over and over again
+
+        while true ; do mp3 j 1300 ; sleep 386 ; done
+
+    Monitoring the progress of the daemon
+
+        watch mp3 time
 
 FILES
     $HOME/.mp3/mp3_socket

@@ -3,14 +3,37 @@ Revision history for Perl extension MP3::Daemon
 + means it still needs to be done
 - means it's done
 
-0.06
+1.00  TODO
+    + MP3::Daemon::Simple && MP3::Daemon::PIMP and both their
+      clients will be nice to use.
+    + freeze ls semantics
+    + implement "playOffList" 
+      [requested by Marc Lehmann]
+    + make all methods that do $player->load more robust
+      when they encounter bad mp3s.
+    + make a site to describe MP3::Daemon
+    + improve error messages
+      use syslog or some other logging mechanism?
+      `perldoc Sys::Syslog`
+    + put on freshmeat
+
+0.51  Mon Jun  4 21:19:06 MDT 2001
+    - implemented &MP3::Daemon::idle method, and
+      wrote POD for it.
+
+0.50
+    - in Daemon.pm, add $SIG{__DIE__} to the list of signals
+      that gets intercepted.
+    - move to 0.50, because half of it is done.
+      It'll be 1.0 when MP3::Daemon::PIMP is sufficiently mature.
+    - put on sourceforge
+
+0.06  Mon Feb  5 01:15:07 MST 2001
     - fixing documentation to be more accurate
     - added a stub for MP3::Daemon::PIMP
     - added a stub for bin/pimp
       (actually it's the original undaemonized pimp)
     - write documentation on how to subclass MP3::Daemon
-    + implement "playOffList" 
-      [requested by Marc Lehmann]
     - use MP3::Info in MP3::Daemon::Simple to
       augment the "ls" information
       [requested by Rene Mueller]
@@ -21,8 +44,6 @@ Revision history for Perl extension MP3::Daemon
       last track.
     - added ls -f
     - added INSTALL instructions
-    + make all methods that do $player->load more robust
-      when they encounter bad mp3s.
 
 0.05  Fri Feb  2 09:43:02 MST 2001
     - made MP3::Daemon a base-class for others to subclass.

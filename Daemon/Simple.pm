@@ -419,8 +419,8 @@ method will never return.
 
 This combines C<new()> and C<main()> while also forking itself into
 the background.  The spawn method will return immediately to the
-parent process while the child process becomes an MP3::Daemon::Simple that is
-waiting for client requests.
+parent process while the child process becomes an MP3::Daemon::Simple
+that is waiting for client requests.
 
     MP3::Daemon::Simple->spawn($socket_path);
 
@@ -433,13 +433,13 @@ communicate with a previously instantiated MP3::Daemon::Simple.
 
 =back
 
-=head2 Client API
+=head2 Client Protocol
 
-These methods are usually not invoked directly.  They are invoked
-when a client makes a request.  The protocol is very simple.
-The first line is the name of the method.  Each argument to the
-method is specified on successive lines.  A final blank line signifies
-the end of the request.
+These methods are usually not invoked directly.  They are invoked when
+a client makes a request.  The protocol is very simple.  The first
+line is the name of the method.  Each argument to the method is
+specified on successive lines.  A final blank line signifies the end
+of the request.
 
     0   method name
     1   $arg[0]
@@ -550,8 +550,8 @@ this regex.  Of course, one may use grep, instead.
 
 =item quit
 
-This unloads the MP3::Daemon::Simple that was automagically spawned when
-you first invoked mp3.
+This unloads the MP3::Daemon::Simple that was automagically spawned
+when you first invoked mp3.
 
 =back
 
@@ -577,4 +577,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.4 2001/02/05 02:14:13 beppu Exp $
+# $Id: Simple.pm,v 1.6 2001/02/14 22:45:53 beppu Exp $

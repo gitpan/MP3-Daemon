@@ -14,7 +14,7 @@ use IO::Socket;
 use IO::Select;
 #use Fcntl;
 
-$VERSION = 0.06;
+$VERSION = 0.51;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -26,6 +26,7 @@ sub new {
         server      => undef,       # instance of IO::Socket::UNIX
         client      => *STDOUT,     # nice for debugging
         socket_path => $path,
+        idle        => undef,       # coderef to execute while idle
     };
     bless ($self => $class);
 
@@ -41,7 +42,7 @@ sub new {
     # player
     eval {
         $self->{player} = Audio::Play::MPG123->new || die($!);
-        $self->{player}->statfreq(10);
+        $self->{player}->statfreq(1);
     };
     if ($@) {
         unlink($self->{socket_path});
@@ -108,14 +109,28 @@ sub readCommand {
 # delete the socket before exiting
 #_______________________________________
 sub setupSignals {
-    my $self   = shift;
-    $SIG{INT}  =
-    $SIG{HUP}  =
-    $SIG{PIPE} =
-    $SIG{TERM} = sub { 
+    my $self      = shift;
+    $SIG{INT}     =
+    $SIG{HUP}     =
+    $SIG{PIPE}    =
+    $SIG{TERM}    =
+    $SIG{__DIE__} = sub { 
         unlink($self->{socket_path});
         exit 1;
     };
+}
+
+# repeatedly executed during the idle loop
+#_______________________________________
+sub idle {
+    my $self = shift;
+    if (@_) {
+        $self->{idle} = shift;
+    } else {
+        if (defined $self->{idle} && ref($self->{idle}) eq "CODE") {
+            $self->{idle}->($self);
+        }
+    }
 }
 
 # the event loop
@@ -162,8 +177,9 @@ sub main {
 
             } else {
                 $player->poll(0);
-                my $s = $player->state;
-                $self->next if ($s == 0);
+                $self->idle();
+                my $s = $player->state();
+                $self->next() if ($s == 0);
                 print "(" . $player->{frame}[2] . ") [$s] \n";
             }
         }
@@ -237,8 +253,8 @@ This is just for setsid.
 
 MP3::Daemon provides a framework for daemonizing mpg123 and
 communicating with it using unix domain sockets.  It provides an event
-loop that listens for client requests and also polls the mpg123
-player to monitor its state and change mp3s when one finishes.  
+loop that listens for client requests and also polls the mpg123 player
+to monitor its state and change mp3s when one finishes.  
 
 The types of client requests available are not defined in
 MP3::Daemon.  It is up to subclasses of MP3::Daemon to flesh out
@@ -252,24 +268,25 @@ MP3::Daemon that are packaged with the MP3::Daemon distribution.
 =head2 MP3::Daemon::Simple => mp3
 
 This subclass of MP3::Daemon provides a very straightforward mp3
-player.  It comes with a client called B<mp3> that you'll find in
-the bin/ directory.  It implements a very simple playlist.  It also
-implements common commands one would expect from an player, and
-it feels very similar to cdcd(1).  It is touted as an mpg123
-front-end for UNIX::Philosophers, because it does not have a
-Captive User Interface.
+player.  It comes with a client called B<mp3> that you'll find in the
+bin/ directory.  It implements a very simple playlist.  It also
+implements common commands one would expect from an player, and it
+feels very similar to cdcd(1).  It is touted as an mpg123 front-end
+for UNIX::Philosophers, because it does not have a Captive User
+Interface.
 
 For more information, `perldoc mp3`;
 
 =head2 MP3::Daemon::PIMP => pimp
 
 This subclass of MP3::Daemon has yet to be written.  The significant
-difference between M:D:Simple and M:D:PIMP will be the B<Plaqueluster>.
-A Plaqueluster is a pseudorandom playlist that enforces a user-definable
-level of non-repetitiveness.  It is also capable of maintaining a median
-volume such that all mp3s are played at the same relative volume.  Never
-again will you be startled by having an mp3 recorded at a low volume 
-being followed by an mp3 recorded I<VERY LOUDLY>.
+difference between M:D:Simple and M:D:PIMP will be the
+B<Plaqueluster>.  A Plaqueluster is a pseudorandom playlist that
+enforces a user-definable level of non-repetitiveness.  It is also
+capable of maintaining a median volume such that all mp3s are played
+at the same relative volume.  Never again will you be startled by
+having an mp3 recorded at a low volume being followed by an mp3
+recorded I<VERY LOUDLY>.
 
 For more information, `perldoc pimp`;
 
@@ -277,8 +294,8 @@ For more information, `perldoc pimp`;
 
 =head2 Server-related Methods
 
-MP3::Daemon relies on unix domain sockets to communicate.  The
-socket requires a place in the file system which is referred to as
+MP3::Daemon relies on unix domain sockets to communicate.  The socket
+requires a place in the file system which is referred to as
 C<$socket_path> in the following descriptions.
 
 =over 4
@@ -291,8 +308,8 @@ This instantiates a new MP3::Daemon.
 
 =item main
 
-This starts the event loop.  This will be listening to the socket
-for client requests while polling mpg123 in times of idleness.  This
+This starts the event loop.  This will be listening to the socket for
+client requests while polling mpg123 in times of idleness.  This
 method will never return.
 
     $mp3d->main;
@@ -313,15 +330,45 @@ communicate with a previously instantiated MP3::Daemon.
 
     my $client = MP3::Daemon->client("$ENV{HOME}/.mp3/mp3_socket");
 
+=item idle
+
+This method has 2 purposes.  When called with a parameter that is a
+code reference, the purpose of this method is to specify a code reference
+to execute during times of idleness.  When called with no parameters,
+the specified code reference will be invoked w/ an MP3::Daemon object
+passed to it as its only parameter.  This method will be invoked
+at regular intervals while main() runs.
+
+Here is an example that will make the idle handler go to the next song
+when there is 8 or fewer seconds left in the current MP3.
+
+    $mp3d->idle (
+        sub {
+            # an MP3::Daemon::Simple object
+            my $self   = shift;
+
+            # an Audio::Play::MPG123 object
+            my $player = $self->{player};
+
+            # an arrayref with time-related info
+            my $f      = $player->{frame};
+
+            $self->next() if ($f->[2] <= 8);
+        }
+    );
+
+This is a flexible mechanism for adding additional behaviours during
+playback.
+
 =back
 
-=head2 Client API
+=head2 Client Protocol
 
-These methods are usually not invoked directly.  They are invoked
-when a client makes a request.  The protocol is very simple.
-The first line is the name of the method.  Each argument to the
-method is specified on successive lines.  A final blank line signifies
-the end of the request.
+These methods are usually not invoked directly.  They are invoked when
+a client makes a request.  The protocol is very simple.  The first
+line is the name of the method.  Each argument to the method is
+specified on successive lines.  A final blank line signifies the end
+of the request.
 
     0   method name
     1   $arg[0]
@@ -347,9 +394,9 @@ When writing a subclass of MP3::Daemon keep the following in mind.
 
 =item Writing the constructor
 
-The new() method provided by MP3::Daemon returns a blessed hash.
-Feel free to add more attributes to the blessed hash as long as you
-don't accidentally stomp on the following keys.
+The new() method provided by MP3::Daemon returns a blessed hashref.  Feel
+free to add more attributes to the blessed hash as long as you don't
+accidentally stomp on the following keys.
 
 =over 12
 
@@ -424,4 +471,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.4 2001/02/05 02:14:13 beppu Exp $
+# $Id: Daemon.pm,v 1.17 2001/06/05 04:47:27 beppu Exp $

@@ -17,7 +17,16 @@ my $class    = "MP3::Daemon::$subclass";
 
 eval "use $class";
 my $mp3d = $class->new("$ENV{HOME}/.mp3/mp3_socket");
-$mp3d->main;
+$mp3d->idle(
+    sub {
+        my $self = shift;
+        my $player = $self->{player};
+        my $f = $player->{frame};
 
-# this if for testing the daemon w/o having it fork
-# $Id: serv,v 1.2 2001/02/05 02:14:13 beppu Exp $
+        print "odd\n" if (int($f->[2]) & 1);
+    }
+);
+$mp3d->main();
+
+# this if for testing the server w/o having it fork
+# $Id: serv,v 1.4 2001/06/05 04:47:27 beppu Exp $

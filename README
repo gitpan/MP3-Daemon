@@ -115,7 +115,36 @@ METHODS
 
             my $client = MP3::Daemon->client("$ENV{HOME}/.mp3/mp3_socket");
 
-  Client API
+    idle
+        This method has 2 purposes. When called with a parameter that is a
+        code reference, the purpose of this method is to specify a code
+        reference to execute during times of idleness. When called with no
+        parameters, the specified code reference will be invoked w/ an
+        MP3::Daemon object passed to it as its only parameter. This method
+        will be invoked at regular intervals while main() runs.
+
+        Here is an example that will make the idle handler go to the next
+        song when there is 8 or fewer seconds left in the current MP3.
+
+            $mp3d->idle (
+                sub {
+                    # an MP3::Daemon::Simple object
+                    my $self   = shift;
+
+                    # an Audio::Play::MPG123 object
+                    my $player = $self->{player};
+
+                    # an arrayref with time-related info
+                    my $f      = $player->{frame};
+
+                    $self->next() if ($f->[2] <= 8);
+                }
+            );
+
+        This is a flexible mechanism for adding additional behaviours during
+        playback.
+
+  Client Protocol
 
     These methods are usually not invoked directly. They are invoked when a
     client makes a request. The protocol is very simple. The first line is

@@ -35,4 +35,4 @@ README.pimp : bin/pimp
 }
 
 # vim:syntax=perl
-# $Id: Makefile.PL,v 1.3 2001/02/05 02:14:13 beppu Exp $
+# $Id: Makefile.PL,v 1.9 2001/02/14 22:45:53 beppu Exp $

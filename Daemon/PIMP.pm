@@ -25,7 +25,7 @@ __END__
 
 =head1 NAME
 
-MP3::Daemon::PIMP - the daemon for Pip's Intergallactive Moosex Plaquluster
+MP3::Daemon::PIMP - the daemon for Pip's Intergallactive Moosex Plaqueluster
 
 =head1 SYNOPSIS
 
@@ -150,4 +150,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: PIMP.pm,v 1.3 2001/02/05 02:14:13 beppu Exp $
+# $Id: PIMP.pm,v 1.4 2001/02/14 22:45:53 beppu Exp $
