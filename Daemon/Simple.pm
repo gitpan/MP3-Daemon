@@ -8,7 +8,7 @@ use File::Basename;
 
 use vars qw(@ISA $VERSION);
 @ISA     = 'MP3::Daemon';
-$VERSION = 0.07;
+$VERSION = 0.08;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -17,11 +17,12 @@ sub new {
     my $self  = $class->SUPER::new(@_);
 
     $self->{playlist} = [ ];    # list of mp3s
-    $self->{n}        = undef,  # index into playlist
+    $self->{n}        = undef;  # index into playlist
     $self->{random}   = 0;      # play random songs? or not.
 
     return $self;
 }
+
 
 # valid requests
 #_______________________________________
@@ -38,8 +39,8 @@ sub new {
 *_ls    = \&ls;
 *_info  = \&info;
 *_time  = \&time;
-*_quit  = \&quit; 
 *_rand  = \&rand;
+*_quit  = \&quit;
 
 # playlist entry indices
 #_______________________________________
@@ -70,6 +71,7 @@ sub play {
     }
     my $mp3 = $pl->[$n][URL];
     $self->{player}->load($mp3);
+    $self->{player}->statfreq(1 / $self->{player}->tpf());
 }
 
 # >>
@@ -163,7 +165,7 @@ sub rw {
     my $player = $self->{player};
     my $tpf    = $player->tpf;
 
-    $player->jump("-" . $sec / $tpf);
+    $player->jump(-$sec / $tpf);
 }
 
 # ++
@@ -628,4 +630,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.7 2001/07/09 14:33:28 beppu Exp $
+# $Id: Simple.pm,v 1.8 2001/07/11 19:01:36 beppu Exp $

@@ -26,6 +26,7 @@ SYNOPSIS
         mp3 jump 820
         mp3 pause
         mp3 stop
+        mp3 rand
 
     Getting information
 
@@ -115,6 +116,10 @@ COMMANDS
                     matching this regex. Of course, one may use grep,
                     instead.
 
+    rand    Calling this with no parameters toggles the random play feature.
+            Randomness can be set to be specifically "on" or "off" by
+            passing the scalar "on" or "off" to this method.
+
     quit    This unloads the MP3::Daemon::Simple that was automagically
             spawned when you first invoked mp3.
 
@@ -123,6 +128,10 @@ COMMANDS
     Saving playlists
 
         mp3 ls -f | perl -pe 's/.*\d+ //' > playlist
+
+    Loading a playlist
+
+        xargs mp3 add < playlist
 
     Deleting songs 6..12
 
@@ -139,6 +148,7 @@ COMMANDS
     Monitoring the progress of the daemon
 
         watch mp3 time
+        watch mp3 info
 
 FILES
     $HOME/.mp3/mp3_socket

@@ -13,7 +13,7 @@ use POSIX qw(setsid);
 use IO::Socket;
 use IO::Select;
 
-$VERSION = 0.52;
+$VERSION = 0.53;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -41,7 +41,6 @@ sub new {
     # player
     eval {
         $self->{player} = Audio::Play::MPG123->new || die($!);
-        $self->{player}->statfreq(1);
     };
     if ($@) {
         unlink($self->{socket_path});
@@ -338,19 +337,14 @@ the specified code reference will be invoked w/ an MP3::Daemon object
 passed to it as its only parameter.  This method will be invoked
 at regular intervals while main() runs.
 
-Here is an example that will make the idle handler go to the next song
-when there is 8 or fewer seconds left in the current MP3.
+B<Example>:  Go to the next song when there are 8 or fewer seconds left
+in the current mp3.
 
     $mp3d->idle (
         sub {
-            # an MP3::Daemon::Simple object
-            my $self   = shift;
-
-            # an Audio::Play::MPG123 object
-            my $player = $self->{player};
-
-            # an arrayref with time-related info
-            my $f      = $player->{frame};
+            my $self   = shift;             # M:D:Simple
+            my $player = $self->{player};   # A:P:MPG123
+            my $f      = $player->{frame};  # hashref w/ time info
 
             $self->next() if ($f->[2] <= 8);
         }
@@ -425,11 +419,11 @@ ends, it will execute $self->next.
 
 =item Only methods prefixed with "_" will be available to clients.
 
-This was to prevent mischievous clients from trying to execute methods
-like new(), spawn() or main().  That would have been evil.  By only
+This was done to prevent mischievous clients from trying to execute
+methods like new(), spawn() or main().  That would be evil.  By only
 allowing methods with names matching /^_/ to be executed, this allows
-the author of a daemon to control what the client can and can't
-request the daemon to do.
+the author of a daemon to control what the client can and can't request
+the daemon to do.
 
 When a client makes a request, the following sequence happens 
 in the event loop.
@@ -444,7 +438,7 @@ itself C<if ($self-E<gt>can('_play'))> before taking any action.
 =item Letting us know
 
 If you write a subclass of MP3::Daemon, we (pip and beppu) would be
-happy to hear from you.
+happy to hear from you.  Write to us at beppu@binq.org or pip@binq.org.
 
 =back
 
@@ -470,4 +464,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.18 2001/07/09 14:33:28 beppu Exp $
+# $Id: Daemon.pm,v 1.19 2001/07/11 19:01:36 beppu Exp $

@@ -17,6 +17,11 @@ Revision history for Perl extension MP3::Daemon
       `perldoc Sys::Syslog`
     + put on freshmeat
 
+0.53  Wed Jul 11 12:00:07 PDT 2001
+    - leave statfreq() alone when instantiating A:P:MPG123.
+      let subclasses define statfreq policy, instead.
+    - updated the README* files
+
 0.52  Mon Jul  9 07:26:45 PDT 2001
     - added a random play feature to MP3::Daemon::Simple
       [ requested by Sean E McSherry ]
