@@ -1,115 +1,192 @@
 NAME
-    mp3 - an mpg123 front-end for UNIX::Philosophers
+    MP3::Daemon - a daemon that possesses mpg123
 
 SYNOPSIS
-    General Syntax
+    MP3::Daemon is meant to be subclassed -- not used directly.
 
-        mp3 [COMMAND] [PARAMETER]...
+        package MP3::Daemon::Simple;
 
-    Building the play list
+        use strict;
+        use vars qw(@ISA);
+        use MP3::Daemon;
 
-        mp3 add Blue_Six-Conga_Lounge_Mix.mp3
-        mp3 add /c/mp3/*.mp3
-        mp3 add http://www.testpress.com/mp3/07202000_papp.mp3
-        mp3 del 0 2 4 -1
+        @ISA = qw(MP3::Daemon);
 
-    Playing from the list
+    Other perl scripts would use MP3::Daemon::Simple like this:
 
-        mp3 play 5
-        mp3 next
-        mp3 prev
+        my $socket_path = "/tmp/mp3d_socket";
 
-    Other controls
+        # start up a daemon
+        MP3::Daemon::Simple->spawn($socket_path);
 
-        mp3 rw 2.00
-        mp3 ff 32.32
-        mp3 jump 820
-        mp3 pause
-        mp3 stop
+        # get a socket that's good for one request to the daemon
+        my $client = MP3::Daemon::Simple->client($socket_path);
 
-    Getting information
+        print $client @command;
 
-        mp3 time
-        mp3 info
-        mp3 ls
+REQUIRES
+    Audio::Play::MPG123
+        This is used to control mpg123 in remote-mode.
 
-    Unloading the daemon
+    IO::Socket::UNIX
+        This is for client/server communication.
 
-        mp3 quit
+    IO::Select
+        I like the OO interface. I didn't feel like using normal select()
+        and messing with vec().
+
+    MP3::Info
+        This is for getting information from mp3 files.
+
+    Pod::Usage
+        This is an optional module that bin/mp3 uses to generate help
+        messages.
+
+    POSIX
+        This is just for setsid.
 
 DESCRIPTION
-    I have combined my favourite features from dcd, cdcd, and mpg123 to
-    create Yet Another Front-End For Mpg123. (YAFEFM)
+    MP3::Daemon provides a framework for daemonizing mpg123 and
+    communicating with it using unix domain sockets. It provides an event
+    loop that listens for client requests and also polls the mpg123 player
+    to monitor its state and change mp3s when one finishes.
 
-    From dcd, I derived the ability to fork itself into the background.
+    The types of client requests available are not defined in MP3::Daemon.
+    It is up to subclasses of MP3::Daemon to flesh out their own protocol
+    for communicating with the daemon. This was done to allow people freedom
+    in defining their own mp3 player semantics.
 
-    From cdcd, I derived its intuitive interface.
+    The following is a short description of the subclasses of MP3::Daemon
+    that are packaged with the MP3::Daemon distribution.
 
-    With mpg123, I do the CPU-intensive work of actually playing the mp3s.
+  MP3::Daemon::Simple => mp3
 
-    The end result is an MP3 player that is compliant with the
-    UNIX::Philosophy. Note that mp3 does not have a Captive User Interface.
-    Requests are made by mp3 to an MP3::Daemon::Simple and mp3 returns
-    immediately after getting a reply. The commands that generate output do
-    so on STDOUT. This makes mp3 easy to combine with other Unix utilities
-    via pipes and filters.
+    This subclass of MP3::Daemon provides a very straightforward mp3 player.
+    It comes with a client called mp3 that you'll find in the bin/
+    directory. It implements a very simple playlist. It also implements
+    common commands one would expect from an player, and it feels very
+    similar to cdcd(1). It is touted as an mpg123 front-end for
+    UNIX::Philosophers, because it does not have a Captive User Interface.
 
-COMMANDS
-    Most of these commands are self-explanatory. One thing that may confuse
-    some people is that the playlist has a zero-based index. Otherwise, if
-    you're familiar with the cdcd interface, this should feel vaguely
-    familiar.
+    For more information, `perldoc mp3`;
 
-    add     This adds mp3s to the playlist. Multiple files may be specified.
+  MP3::Daemon::PIMP => pimp
 
-    del     This deletes items from the playlist by index. More than one
-            index may be specified. If no index is specified, the last mp3
-            in the playlist is removed. Indices may also be negative in
-            which case they count from the end of the playlist.
+    This subclass of MP3::Daemon has yet to be written. The significant
+    difference between M:D:Simple and M:D:PIMP will be the Plaqueluster. A
+    Plaqueluster is a pseudorandom playlist that enforces a user-definable
+    level of non-repetitiveness. It is also capable of maintaining a median
+    volume such that all mp3s are played at the same relative volume. Never
+    again will you be startled by having an mp3 recorded at a low volume
+    being followed by an mp3 recorded *VERY LOUDLY*.
 
-    play    This plays the current mp3 if no other parameters are given.
-            This command also takes an optional parameter where the index of
-            an mp3 in the playlist may be given.
+    For more information, `perldoc pimp`;
 
-    next    This loads the next mp3 in the playlist.
+METHODS
+  Server-related Methods
 
-    prev    This loads the previous mp3 in the playlist.
+    MP3::Daemon relies on unix domain sockets to communicate. The socket
+    requires a place in the file system which is referred to as
+    "$socket_path" in the following descriptions.
 
-    pause   This pauses the currently playing mp3. If the mp3 was already
-            paused, this will unpause it. Note that using the play command
-            on a paused mp3 makes it start over from the beginning.
+    new $socket_path
+        This instantiates a new MP3::Daemon.
 
-    rw      This rewinds an mp3 by the specified amount of seconds.
+            my $mp3d = MP3::Daemon->new("$ENV{HOME}/.mp3/mp3_socket");
 
-    ff      This fastforwards an mp3 by the specified amount of seconds.
+    main
+        This starts the event loop. This will be listening to the socket for
+        client requests while polling mpg123 in times of idleness. This
+        method will never return.
 
-    jump    This will go directly to a part of an mp3 specified by seconds
-            from the beginning of the track. If the number of seconds is
-            prefixed with either a "-" or a "+", a relative jump will be
-            made. This is another way to rewind or fastforward.
+            $mp3d->main;
 
-    stop    This stops the player.
+    spawn $socket_path
+        This combines "new()" and "main()" while also forking itself into
+        the background. The spawn method will return immediately to the
+        parent process while the child process becomes an MP3::Daemon that
+        is waiting for client requests.
 
-    time    This sends back the index of the current track, the amount of
-            time that has elapsed, the amount of time that is left, and the
-            total amount of time. All times are reported in seconds.
+            MP3::Daemon->spawn("$ENV{HOME}/.mp3/mp3_socket");
 
-    info    This sends back information about the current track.
+    client $socket_path
+        This is a factory method for use by clients who want a socket to
+        communicate with a previously instantiated MP3::Daemon.
 
-    ls      This sends back a list of all mp3s currently in the playlist.
-            The current track is denoted by a line matching the regexp /^>/.
+            my $client = MP3::Daemon->client("$ENV{HOME}/.mp3/mp3_socket");
 
-    quit    This unloads the MP3::Daemon::Simple that was automagically
-            spawned when you first invoked mp3.
+  Client API
 
-FILES
-    $HOME/.mp3/mp3_socket
-        This is the socket used to communicate with the daemon. In the event
-        that the daemon is not cleanly shut down, this file may need to be
-        deleted before another MP3::Daemon::Simple can be started up.
+    These methods are usually not invoked directly. They are invoked when a
+    client makes a request. The protocol is very simple. The first line is
+    the name of the method. Each argument to the method is specified on
+    successive lines. A final blank line signifies the end of the request.
+
+        0   method name
+        1   $arg[0]
+        .   ...
+        n-1 $arg[n-2]
+        n   /^$/
+
+    Example:
+
+        print $client <<REQUEST;
+        play
+        5
+
+        REQUEST
+
+    This plays $self->{playlist}[5].
+
+SUBCLASSES
+    When writing a subclass of MP3::Daemon keep the following in mind.
+
+    Writing the constructor
+        The new() method provided by MP3::Daemon returns a blessed hash.
+        Feel free to add more attributes to the blessed hash as long as you
+        don't accidentally stomp on the following keys.
+
+        player      This is an instance of Audio::Play::MPG123.
+
+        server      This is an instance of IO::Socket::UNIX.
+
+        client      This is another instance of IO::Socket::UNIX that the
+                    daemon may write to in order to reply to a client.
+
+        socket_path This is where in the filesystem the unix domain socket
+                    is sitting.
+
+    You must implement a next() method.
+        The event loop in &MP3::Daemon::main relies on it. When a song ends,
+        it will execute $self->next.
+
+    Only methods prefixed with "_" will be available to clients.
+        This was to prevent mischievous clients from trying to execute
+        methods like new(), spawn() or main(). That would have been evil. By
+        only allowing methods with names matching /^_/ to be executed, this
+        allows the author of a daemon to control what the client can and
+        can't request the daemon to do.
+
+        When a client makes a request, the following sequence happens in the
+        event loop.
+
+            my @args = $self->readCommand;
+            my $do_this = "_" . shift(@args);
+            if ($self->can($do_this)) { ... }
+
+        If a client requested the daemon to "play", the event loop will ask
+        itself "if ($self->can('_play'))" before taking any action.
+
+    Letting us know
+        If you write a subclass of MP3::Daemon, we (pip and beppu) would be
+        happy to hear from you.
+
+DIAGNOSTICS
+    I need to be able to report errors in the daemon better. They currently
+    go to /dev/null. I need to learn how to use syslog.
 
 COPYLEFT
-    Copyleft (c) 2001 John BEPPU. All rights reversed. This program is free
+    Copyleft (!c) 2001 John BEPPU. All rights reversed. This program is free
     software; you can redistribute it and/or modify it under the same terms
     as Perl itself.
 
@@ -117,24 +194,5 @@ AUTHOR
     John BEPPU <beppu@binq.org>
 
 SEE ALSO
-    My inspirations
-        dcd(1), cdcd(1), mpg123(1)
-
-    Other perl modules
-        Audio::Play::MPG123(3pm), MP3::Daemon::Simple(3pm), MP3::Daemon(3pm)
-
-    The UNIX Philosophy
-        If you want to know what UNIX is all about, check this book out.
-        It's only 151 pages, and it's really easy and fun to read. Some
-        parts are a little biased and/or dated, but there is still a lot of
-        wisdom in it. I highly recommend it.
-
-            {
-                title  => 'The UNIX Philosophy',
-                author => 'Mike Gancarz',
-                isbn   => '1-55558-123-4',
-            }
-
-    the newest version
-            http://opensource.lineo.com/cgi-bin/cvsweb/pm/MP3/Daemon::Simple/
+    mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 

@@ -12,7 +12,7 @@ BEGIN {
     system "make";
 }
 
-my $subclass = shift || "Pimp";
+my $subclass = shift || "PIMP";
 my $class    = "MP3::Daemon::$subclass";
 
 eval "use $class";
@@ -20,4 +20,4 @@ my $mp3d = $class->new("$ENV{HOME}/.mp3/mp3_socket");
 $mp3d->main;
 
 # this if for testing the daemon w/o having it fork
-# $Id: ex,v 1.1.1.1 2001/01/30 12:47:44 beppu Exp $
+# $Id: serv,v 1.2 2001/02/05 02:14:13 beppu Exp $

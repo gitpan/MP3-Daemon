@@ -124,7 +124,7 @@ if (defined $alias{$cmd}) {
         print $line;
     }
 } else {
-    print "$cmd is not a valid command.\n"; 
+    print "$cmd yourself!\n"; 
 }
 
 __END__
@@ -135,11 +135,11 @@ mp3 - an mpg123 front-end for UNIX::Philosophers
 
 =head1 SYNOPSIS
 
-General Syntax
+General syntax
 
     mp3 [COMMAND] [PARAMETER]...
 
-Building the play list
+Building the playlist
 
     mp3 add Blue_Six-Conga_Lounge_Mix.mp3
     mp3 add /c/mp3/*.mp3
@@ -205,7 +205,7 @@ This adds mp3s to the playlist.  Multiple files may be specified.
 =item del
 
 This deletes items from the playlist by index.  More than one
-index may be specified.  If no index is specified, the last mp3
+index may be specified.  If no index is specified, the current mp3
 in the playlist is removed.  Indices may also be negative in
 which case they count from the end of the playlist.
 
@@ -259,10 +259,33 @@ amount of time.  All times are reported in seconds.
 
 This sends back information about the current track.
 
-=item ls
+=item ls [-fl] [REGEX]
 
-This sends back a list of all mp3s currently in the playlist.  The
-current track is denoted by a line matching the regexp /^>/.
+First, a warning -- I'm beginning to realize how GNU/ls became so
+bloated.  The C<ls> interface should not be considered stable.  I'm
+still playing with it.
+
+This sends back a list of the titles of all mp3s currently in the
+playlist.  The current track is denoted by a line matching the regexp
+/^>/.  
+
+=over 8
+
+=item -f
+
+This makes C<ls> return a listing with index and filename.
+
+=item -l
+
+This makes C<ls> return a long listing that includes index,
+title, and filename.
+
+=item [REGEX]
+
+This allows one to filter the playlist for only titles matching
+this regex.  Of course, one may use grep, instead.
+
+=back
 
 =item quit
 
@@ -270,6 +293,20 @@ This unloads the MP3::Daemon::Simple that was automagically spawned
 when you first invoked mp3.
 
 =back
+
+=head2 The UNIX::Philosophy In Action
+
+Saving playlists
+
+    mp3 ls -f | perl -pe 's/.*\d+ //' > playlist
+
+Deleting songs 6..12
+
+    mp3 del `seq 6 12`
+
+Sorting your playlist from shortest to longest mp3
+
+    mp3 ls -l | sed 's/^>/ /' | sed 's/:/./' | sort -g -k 2
 
 =head1 FILES
 
@@ -285,7 +322,7 @@ deleted before another MP3::Daemon::Simple can be started up.
 
 =head1 COPYLEFT
 
-Copyleft (c) 2001 John BEPPU.  All rights reversed.  This program is
+Copyleft (!c) 2001 John BEPPU.  All rights reversed.  This program is
 free software; you can redistribute it and/or modify it under the same
 terms as Perl itself.
 
@@ -320,7 +357,7 @@ I highly recommend it.
 
 =item the newest version
 
-    http://opensource.lineo.com/cgi-bin/cvsweb/pm/MP3/Daemon::Simple/
+    http://opensource.lineo.com/cgi-bin/cvsweb/pm/MP3/Daemon/
 
 =back
 

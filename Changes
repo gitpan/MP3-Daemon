@@ -3,7 +3,28 @@ Revision history for Perl extension MP3::Daemon
 + means it still needs to be done
 - means it's done
 
-0.05
+0.06
+    - fixing documentation to be more accurate
+    - added a stub for MP3::Daemon::PIMP
+    - added a stub for bin/pimp
+      (actually it's the original undaemonized pimp)
+    - write documentation on how to subclass MP3::Daemon
+    + implement "playOffList" 
+      [requested by Marc Lehmann]
+    - use MP3::Info in MP3::Daemon::Simple to
+      augment the "ls" information
+      [requested by Rene Mueller]
+    - allow regular expression filter on "ls"
+      [requested by Rene Mueller]
+    - changed "mp3 del" to delete current track when
+      no track is specified.  It used to delete the
+      last track.
+    - added ls -f
+    - added INSTALL instructions
+    + make all methods that do $player->load more robust
+      when they encounter bad mp3s.
+
+0.05  Fri Feb  2 09:43:02 MST 2001
     - made MP3::Daemon a base-class for others to subclass.
     - made MP3::Daemon::Simple what MP3::Daemon used to be
     - updated /bin/mp3 to use M:D:S

@@ -1,12 +1,14 @@
 package MP3::Daemon::Simple;
 
 use strict;
+use MP3::Info;
 use MP3::Daemon;
+use Getopt::Std;
+use File::Basename;
+
 use vars qw(@ISA $VERSION);
-
-@ISA = qw(MP3::Daemon);
-
-$VERSION = 0.05;
+@ISA     = 'MP3::Daemon';
+$VERSION = 0.06;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -37,6 +39,12 @@ sub new {
 *_time  = \&time;
 *_quit  = \&quit; 
 
+# playlist entry indices
+#_______________________________________
+use constant URL   => 0;
+use constant TITLE => 1;
+use constant TIME  => 2;
+
 # |>
 #_______________________________________
 sub play {
@@ -58,7 +66,7 @@ sub play {
     } else {
         $self->{n} = $n = 0 unless defined($n);
     }
-    my $mp3 = $pl->[$n];
+    my $mp3 = $pl->[$n][URL];
     $self->{player}->load($mp3);
 }
 
@@ -81,7 +89,7 @@ sub next {
             $n++;
         }
         $self->{n} = $n;
-        $self->{player}->load($pl->[$n]);
+        $self->{player}->load($pl->[$n][URL]);
     }
 }
 
@@ -104,7 +112,7 @@ sub prev {
             $n--
         }
         $self->{n} = $n;
-        $self->{player}->load($pl->[$n]);
+        $self->{player}->load($pl->[$n][URL]);
     }
 }
 
@@ -158,8 +166,30 @@ sub rw {
 # ++
 #_______________________________________
 sub add {
-    my $self = shift;
-    push @{$self->{playlist}}, @_;
+    my $self   = shift;
+    my $pl     = $self->{playlist};
+    my $client = $self->{client};
+
+    foreach (@_) {
+        my $tag;
+        my $info = get_mp3info($_);
+        if (m|^http://|) {
+            $info->{TIME} = "00:00";
+            $tag->{TITLE} = (fileparse($_, '\..*$'))[0];
+        }
+        if ($info) {
+            $tag ||= get_mp3tag($_);
+            $tag->{TITLE} ||= (fileparse($_, '\..*$'))[0];
+            my $entry = [
+                $_,                     # URL
+                $tag->{TITLE},          # TITLE
+                $info->{TIME},          # TIME
+            ];
+            push(@$pl, $entry);
+        } else {
+            print $client qq("$_" does not seem to be an mp3.\n);
+        }
+    }
 }
 
 # --
@@ -171,8 +201,8 @@ sub del {
     my $n    = $self->{n};
     my $x    = $n;
 
-    # no parameter deletes last item from list
-    push(@_, $end) unless (scalar(@_));
+    # no parameter deletes current item from list
+    push(@_, $n) unless (scalar(@_));
 
     # delete 1 or more from list
     my @new_playlist;
@@ -206,8 +236,28 @@ sub del {
     if (defined $kill{$x}) {
         $n = 0 if ($n > $end);
         $self->{n} = $n;
-        $self->{player}->load($pl->[$n]);
+        $self->{player}->load($pl->[$n][URL]);
     }
+}
+
+#_______________________________________
+sub ls_short_entry_factory {
+    my $attr = shift;
+    return sub {
+        my $i     = shift;
+        my $entry = shift;
+        return sprintf('%5s %s', $i, qq("$entry->[$attr]"));
+    }
+}
+
+#_______________________________________
+sub ls_long_entry {
+    my $i     = shift;
+    my $entry = shift;
+    return sprintf(
+        '%5s %5s %-30s "%s"',
+        $i, $entry->[TIME], qq("$entry->[TITLE]"), $entry->[URL]
+    );
 }
 
 # @
@@ -215,16 +265,29 @@ sub del {
 sub ls {
     my $self   = shift;
     my $client = $self->{client};
+    my $pl     = $self->{playlist};
 
-    my $i = 0;
+    my %opt;
+    local @ARGV = @_;
+    getopts('lf', \%opt);
+    my $re = shift(@ARGV);
+
+    my $attr = defined($opt{f}) ? URL : TITLE;
+    my $i;
     my $n = $self->{n};
-    print $client map { 
+    my $l = defined($opt{l}) 
+        ? \&ls_long_entry
+        :  &ls_short_entry_factory($attr);
+    for ($i =0 ; $i < scalar(@$pl); $i++) {
+        defined($re) && do { $pl->[$i][TITLE] =~ /$re/ || next };
         if ($i == $n) {
-            sprintf("> %5d %s\n", $i++, $_);
+            $_ = $l->($i, $pl->[$i]);
+            s/^ />/;
+            print $client "$_\n";
         } else {
-            sprintf("  %5d %s\n", $i++, $_);
+            print $client $l->($i, $pl->[$i]), "\n";
         }
-    } @{$self->{playlist}};
+    }
 }
 
 # ?
@@ -278,7 +341,7 @@ __END__
 
 =head1 NAME
 
-MP3::Daemon::Simple - a daemon that possesses mpg123
+MP3::Daemon::Simple - the daemon for the mp3(1p) client
 
 =head1 SYNOPSIS
 
@@ -288,7 +351,7 @@ Fork a daemon
 
 Start a server, but don't fork into background
 
-    my $mp3d = MP3::Daemon::Simple->new($socket_path)
+    my $mp3d = MP3::Daemon::Simple->new($socket_path);
     $mp3d->main;
 
 You're a client wanting a socket to talk to the daemon
@@ -300,17 +363,30 @@ You're a client wanting a socket to talk to the daemon
 
 =over 4
 
+=item File::Basename
+
+This is used to give titles to songs when the mp3 leaves
+the title undefined.
+
+=item Getopt::Std
+
+Some methods need to pretend they're command line utilities.
+
 =item MP3::Daemon
 
 This is the base class.  It provides the daemonization and
 event loop.
+
+=item MP3::Info
+
+This is for getting information out of mp3s.
 
 =back
 
 =head1 DESCRIPTION
 
 MP3::Daemon::Simple provides a server that controls mpg123.  Clients
-such as /bin/mp3 may connect to it and request the server to
+such as mp3(1p) may connect to it and request the server to
 manipulate its internal playlists.
 
 =head1 METHODS
@@ -321,13 +397,15 @@ MP3::Daemon::Simple relies on unix domain sockets to communicate.  The
 socket requires a place in the file system which is referred to
 as C<$socket_path> in the following descriptions.
 
+    $socket_path = "$ENV{HOME}/.mp3/mp3_socket";
+
 =over 4
 
 =item new $socket_path 
 
 This instantiates a new MP3::Daemon::Simple.
 
-    my $mp3d = MP3::Daemon::Simple->new("$ENV{HOME}/.mp3/mp3_socket");
+    my $mp3d = MP3::Daemon::Simple->new($socket_path);
 
 =item main
 
@@ -344,14 +422,14 @@ the background.  The spawn method will return immediately to the
 parent process while the child process becomes an MP3::Daemon::Simple that is
 waiting for client requests.
 
-    MP3::Daemon::Simple->spawn("$ENV{HOME}/.mp3/mp3_socket");
+    MP3::Daemon::Simple->spawn($socket_path);
 
 =item client $socket_path 
 
 This is a factory method for use by clients who want a socket to
 communicate with a previously instantiated MP3::Daemon::Simple.
 
-    my $client = MP3::Daemon::Simple->client("$ENV{HOME}/.mp3/mp3_socket");
+    my $client = MP3::Daemon::Simple->client($socket_path);
 
 =back
 
@@ -388,7 +466,7 @@ This adds mp3s to the playlist.  Multiple files may be specified.
 =item del
 
 This deletes items from the playlist by index.  More than one
-index may be specified.  If no index is specified, the last mp3
+index may be specified.  If no index is specified, the current mp3
 in the playlist is removed.  Indices may also be negative in
 which case they count from the end of the playlist.
 
@@ -442,10 +520,33 @@ amount of time.  All times are reported in seconds.
 
 This sends back information about the current track.
 
-=item ls
+=item ls [-fl] [REGEX]
 
-This sends back a list of all mp3s currently in the playlist.  The
-current track is denoted by a line matching the regexp /^>/.
+First, a warning -- I'm beginning to realize how GNU/ls became so
+bloated.  The C<ls> interface should not be considered stable.  I'm
+still playing with it.
+
+This sends back a list of the titles of all mp3s currently in the
+playlist.  The current track is denoted by a line matching the regexp
+/^>/.  
+
+=over 8
+
+=item -f
+
+This makes C<ls> return a listing with index and filename.
+
+=item -l
+
+This makes C<ls> return a long listing that includes index,
+title, and filename.
+
+=item [REGEX]
+
+This allows one to filter the playlist for only titles matching
+this regex.  Of course, one may use grep, instead.
+
+=back
 
 =item quit
 
@@ -476,4 +577,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.1.1.1 2001/01/30 12:47:44 beppu Exp $
+# $Id: Simple.pm,v 1.4 2001/02/05 02:14:13 beppu Exp $

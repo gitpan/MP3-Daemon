@@ -1,10 +1,15 @@
 Changes
 Daemon.pm
+Daemon/PIMP.pm
 Daemon/Simple.pm
+INSTALL
 MANIFEST
 MANIFEST.SKIP
 Makefile.PL
 README
+README.mp3
+README.pimp
 bin/mp3
-ex
+bin/pimp
+serv
 test.pl

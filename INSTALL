@@ -1,0 +1,12 @@
+
+The easiest way to install
+
+    perl -MCPAN -e 'install MP3::Daemon'
+
+But there's a caveat
+
+    You need to install a specially hacked up mpg123 that comes
+    with Audio::Play::MPG123 for the MP3::Daemon::* modules to
+    work optimally.
+    
+
