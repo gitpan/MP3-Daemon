@@ -5,7 +5,7 @@ use MP3::Daemon;
 
 use vars qw(@ISA $VERSION);
 @ISA     = 'MP3::Daemon';
-$VERSION = 0.01;
+$VERSION = 0.02;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -70,11 +70,15 @@ as C<$socket_path> in the following descriptions.
 
 =over 4
 
-=item new $socket_path 
+=item new (socket_path => $socket_path, at_exit => $code_ref)
 
-This instantiates a new MP3::Daemon::PIMP.
+This instantiates a new MP3::Daemon.  The parameter, C<socket_path> is
+mandatory, but C<at_exit> is optional.
 
-    my $mp3d = MP3::Daemon::PIMP->new("$ENV{HOME}/.mp3/mp3_socket");
+    my $mp3d = MP3::Daemon::PIMP->new (
+        socket_path => "$ENV{HOME}/.mp3/mp3_socket"
+        at_exit     => sub { print "farewell\n" },
+    );
 
 =item main
 
@@ -84,14 +88,17 @@ method will never return.
 
     $mp3d->main;
 
-=item spawn $socket_path 
+=item spawn (socket_path => $socket_path, at_exit => $code_ref)
 
 This combines C<new()> and C<main()> while also forking itself into
 the background.  The spawn method will return immediately to the
-parent process while the child process becomes an MP3::Daemon::PIMP that is
+parent process while the child process becomes an MP3::Daemon that is
 waiting for client requests.
 
-    MP3::Daemon::PIMP->spawn("$ENV{HOME}/.mp3/mp3_socket");
+    MP3::Daemon::PIMP->spawn (
+        socket_path => "$ENV{HOME}/.mp3/mp3_socket"
+        at_exit     => sub { print "farewell\n" },
+    );
 
 =item client $socket_path 
 
@@ -99,6 +106,40 @@ This is a factory method for use by clients who want a socket to
 communicate with a previously instantiated MP3::Daemon::PIMP.
 
     my $client = MP3::Daemon::PIMP->client("$ENV{HOME}/.mp3/mp3_socket");
+
+=item idle $code_ref
+
+This method has 2 purposes.  When called with a parameter that is a
+code reference, the purpose of this method is to specify a code reference
+to execute during times of idleness.  When called with no parameters,
+the specified code reference will be invoked w/ an MP3::Daemon object
+passed to it as its only parameter.  This method will be invoked
+at regular intervals while main() runs.
+
+B<Example>:  Go to the next song when there are 8 or fewer seconds left
+in the current mp3.
+
+    $mp3d->idle (
+        sub {
+            my $self   = shift;             # M:D:Simple
+            my $player = $self->{player};   # A:P:MPG123
+            my $f      = $player->{frame};  # hashref w/ time info
+
+            $self->next() if ($f->[2] <= 8);
+        }
+    );
+
+This is a flexible mechanism for adding additional behaviours during
+playback.
+
+=item atExit $code_ref
+
+This mimics the C function atexit().  It allows one to give an MP3::Daemon
+some CODEREFs to execute when the destructor is called.  Like the C version,
+the CODEREFs will be called in the reverse order of their registration.
+Unlike the C version, C<$self> will be given as a parameter to each CODEREF.
+
+    $mp3d->atExit( sub { unlink("$ENV{HOME}/.mp3/mp3.pid") } );
 
 =back
 
@@ -150,4 +191,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: PIMP.pm,v 1.4 2001/02/14 22:45:53 beppu Exp $
+# $Id: PIMP.pm,v 1.5 2001/07/25 22:58:16 beppu Exp $

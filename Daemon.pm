@@ -13,21 +13,26 @@ use POSIX qw(setsid);
 use IO::Socket;
 use IO::Select;
 
-$VERSION = 0.54;
+$VERSION = '0.60';
 
 # constructor that does NOT daemonize itself
 #_______________________________________
 sub new {
-    my $class = shift;
-    my $path  = shift || die('socket_path => REQUIRED!');
+    my $class = shift; (@_ & 1) && die "Odd number of parameters\n";
+    my %opt   = @_;
+    my $path  = $opt{socket_path} || die("socket_path => REQUIRED!");
     my $self  = { 
         player      => undef,       # instance of Audio:Play:MPG123
         server      => undef,       # instance of IO::Socket::UNIX
         client      => *STDOUT,     # nice for debugging
         socket_path => $path,
         idle        => undef,       # coderef to execute while idle
+        at_exit     => [ ]          # array of coderefs to execute when done
     };
     bless ($self => $class);
+
+    # clean-up handlers
+    foreach (@{$self->{at_exit}}) { $self->atExit($_); }
 
     # server socket 
     $self->{server} = IO::Socket::UNIX->new (
@@ -36,7 +41,6 @@ sub new {
         Listen => SOMAXCONN,
     ) or die($!);
     chmod(0600, $self->{socket_path});
-    #fcntl($self->{server}, F_SETFL, O_NONBLOCK);
 
     # player
     eval {
@@ -85,9 +89,22 @@ sub client {
     return $client;
 }
 
+# add clean-up handlers
+#_______________________________________
+sub atExit {
+    my $self = shift;
+    foreach (@_) {
+        unshift(@{$self->{at_exit}}, $_) if (ref eq "CODE");
+    }
+}
+
 # destructor
 #_______________________________________
-sub DESTROY { }
+sub DESTROY {
+    my $self = shift;
+    my $sub;
+    foreach $sub (@{$self->{at_exit}}) { $sub->($self) }
+}
 
 # read from $fh until you get a blank line
 #_______________________________________
@@ -298,11 +315,15 @@ C<$socket_path> in the following descriptions.
 
 =over 4
 
-=item new $socket_path 
+=item new (socket_path => $socket_path, at_exit => $code_ref)
 
-This instantiates a new MP3::Daemon.
+This instantiates a new MP3::Daemon.  The parameter, C<socket_path> is
+mandatory, but C<at_exit> is optional.
 
-    my $mp3d = MP3::Daemon->new("$ENV{HOME}/.mp3/mp3_socket");
+    my $mp3d = MP3::Daemon->new (
+        socket_path => "$ENV{HOME}/.mp3/mp3_socket"
+        at_exit     => sub { print "farewell\n" },
+    );
 
 =item main
 
@@ -312,14 +333,17 @@ method will never return.
 
     $mp3d->main;
 
-=item spawn $socket_path 
+=item spawn (socket_path => $socket_path, at_exit => $code_ref)
 
 This combines C<new()> and C<main()> while also forking itself into
 the background.  The spawn method will return immediately to the
 parent process while the child process becomes an MP3::Daemon that is
 waiting for client requests.
 
-    MP3::Daemon->spawn("$ENV{HOME}/.mp3/mp3_socket");
+    MP3::Daemon->spawn (
+        socket_path => "$ENV{HOME}/.mp3/mp3_socket"
+        at_exit     => sub { print "farewell\n" },
+    );
 
 =item client $socket_path 
 
@@ -328,7 +352,7 @@ communicate with a previously instantiated MP3::Daemon.
 
     my $client = MP3::Daemon->client("$ENV{HOME}/.mp3/mp3_socket");
 
-=item idle
+=item idle $code_ref
 
 This method has 2 purposes.  When called with a parameter that is a
 code reference, the purpose of this method is to specify a code reference
@@ -352,6 +376,15 @@ in the current mp3.
 
 This is a flexible mechanism for adding additional behaviours during
 playback.
+
+=item atExit $code_ref
+
+This mimics the C function atexit().  It allows one to give an MP3::Daemon
+some CODEREFs to execute when the destructor is called.  Like the C version,
+the CODEREFs will be called in the reverse order of their registration.
+Unlike the C version, C<$self> will be given as a parameter to each CODEREF.
+
+    $mp3d->atExit( sub { unlink("$ENV{HOME}/.mp3/mp3.pid") } );
 
 =back
 
@@ -464,4 +497,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.20 2001/07/23 16:18:05 beppu Exp $
+# $Id: Daemon.pm,v 1.21 2001/07/25 22:58:16 beppu Exp $

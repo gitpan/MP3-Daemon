@@ -11,11 +11,28 @@ Revision history for Perl extension MP3::Daemon
       [requested by Marc Lehmann]
     + make all methods that do $player->load more robust
       when they encounter bad mp3s.
-    + make a site to describe MP3::Daemon
     + improve error messages
       use syslog or some other logging mechanism?
       `perldoc Sys::Syslog`
-    + put on freshmeat
+
+0.60  Wed Jul 25 13:58:39 PDT 2001
+    - fixed a serious bug in the randomization code that could
+      cause bad things to happen.
+    - added atExit() method which behaves a lot like
+      the C function atexit()
+    - API CHANGE!
+      made the new() and spawn() methods use named parameters:
+      socket_path => for specifying where in the filesystem to
+      map the socket to, and at_exit => which is an option arg
+      where one can give coderefs for the destructor to execute.
+    - changed bin/mp3 to call spawn w/ the new calling conventions.
+    - also made bin/mp3 tell the MP3::Daemon it spawns to delete
+      the pid file that bin/mp3 made when it DESTROYs itself.
+    - added a kill command to bin/mp3
+    - I found out that Audio::Play::MPG123 hangs when you try to
+      pause or stop when it's already stopped.  I accomodated for
+      that in MP3::Daemon::Simple.
+    - added THANKS, because gratitude needs to be expressed.
 
 0.54  Mon Jul 23 09:23:34 PDT 2001
     - made bin/mp3 create a pid_file for the server process.
@@ -27,6 +44,8 @@ Revision history for Perl extension MP3::Daemon
     - leave statfreq() alone when instantiating A:P:MPG123.
       let subclasses define statfreq policy, instead.
     - updated the README* files
+    - made a site to describe MP3::Daemon
+    - put on freshmeat
 
 0.52  Mon Jul  9 07:26:45 PDT 2001
     - added a random play feature to MP3::Daemon::Simple

@@ -37,6 +37,7 @@ SYNOPSIS
     Unloading the daemon
 
         mp3 quit
+        mp3 kill
 
 DESCRIPTION
     I have combined my favourite features of dcd, cdcd, and mpg123 to create
@@ -123,6 +124,9 @@ COMMANDS
     quit    This unloads the MP3::Daemon::Simple that was automagically
             spawned when you first invoked mp3.
 
+    kill    If for some reason the daemon hangs on you, you can use this as
+            a last resort.
+
   The UNIX::Philosophy In Action
 
     Saving playlists
@@ -155,6 +159,9 @@ FILES
         This is the socket used to communicate with the daemon. In the event
         that the daemon is not cleanly shut down, this file may need to be
         deleted before another MP3::Daemon::Simple can be started up.
+
+    $HOME/.mp3/mp3.pid
+        This is the pid of the daemonized process.
 
 COPYLEFT
     Copyleft (!c) 2001 John BEPPU. All rights reversed. This program is free

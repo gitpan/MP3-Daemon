@@ -16,7 +16,7 @@ my $subclass = shift || "Simple";
 my $class    = "MP3::Daemon::$subclass";
 
 eval "use $class";
-my $mp3d = $class->new("$ENV{HOME}/.mp3/mp3_socket");
+my $mp3d = $class->new(socket_path => "$ENV{HOME}/.mp3/mp3_socket");
 # $mp3d->idle(
 #     sub {
 #         my $self = shift;
@@ -29,4 +29,4 @@ my $mp3d = $class->new("$ENV{HOME}/.mp3/mp3_socket");
 $mp3d->main();
 
 # this if for testing the server w/o having it fork
-# $Id: serv,v 1.6 2001/07/11 19:01:36 beppu Exp $
+# $Id: serv,v 1.7 2001/07/25 23:01:45 beppu Exp $

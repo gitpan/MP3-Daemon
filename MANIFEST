@@ -9,6 +9,7 @@ Makefile.PL
 README
 README.mp3
 README.pimp
+THANKS
 bin/mp3
 bin/pimp
 serv
