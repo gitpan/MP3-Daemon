@@ -8,7 +8,7 @@ use File::Basename;
 
 use vars qw(@ISA $VERSION);
 @ISA     = qw(MP3::Daemon);
-$VERSION = 0.10;
+$VERSION = 0.11;
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -19,6 +19,7 @@ sub new {
     $self->{playlist} = [ ];    # list of mp3s
     $self->{n}        = undef;  # index into playlist
     $self->{random}   = 0;      # play random songs? or not.
+    $self->{loop}     = "all";  # looping behaviour (off|single|all)
 
     return $self;
 }
@@ -31,6 +32,7 @@ sub new {
 *_prev  = \&prev;
 *_pause = \&pause;
 *_stop  = \&stop;
+*_loop  = \&loop;
 *_jump  = \&jump;
 *_ff    = \&ff;
 *_rw    = \&rw;
@@ -51,8 +53,8 @@ use constant TIME  => 2;
 # Audio::Play::MPG123 states
 #_______________________________________
 use constant STOPPED => 0;
-use constant PAUSED  => 0;
-use constant PLAYING => 0;
+use constant PAUSED  => 1;
+use constant PLAYING => 2;
 
 # |>
 #_______________________________________
@@ -92,15 +94,24 @@ sub next {
     my $client = $self->{client};
 
     if (scalar @$pl) {
-        if (not defined $n) {
-            $n = 0;
-        } elsif ($n >= $end) {
-            $n = 0;
-        } else {
-            $n++;
-        }
+	my $loop = $self->{loop};
+	if (($loop ne "single") || 
+	    ($loop eq "single" && $self->{player}->state == PLAYING))
+	{
+	    if (not defined $n) {
+		$n = 0;
+	    } elsif ($n >= $end) {
+		$n = 0;
+	    } else {
+		$n++;
+	    }
+	}
         $self->{n} = $n;
-        $self->{player}->load($pl->[$n][URL]);
+	if ($loop eq "off") {
+	    $self->stop();
+	} else {
+	    $self->{player}->load($pl->[$n][URL]);
+	}
     }
 }
 
@@ -141,6 +152,22 @@ sub stop {
     my $self   = shift;
     my $player = $self->{player};
     $player->stop() unless $player->state == STOPPED;
+}
+
+# 69
+#_______________________________________
+sub loop {
+    my $self   = shift;
+    my $opt    = shift;
+    my $client = $self->{client};
+    if ($opt) {
+	unless (grep { /^$opt$/ } qw(all single off)) {
+	    print $client "mp3 loop [all|single|off]\n";
+	    return;
+	}
+	$self->{loop} = $opt;
+    }
+    print $client "loop $self->{loop}\n";
 }
 
 # !!
@@ -325,6 +352,7 @@ sub info {
     printf $client ($format, "state", 
         (qw(stopped paused playing))[$player->state()]);
     printf $client ($format, "random", $self->{random});
+    printf $client ($format, "loop", $self->{loop});
     $self->time;
 }
 
@@ -651,6 +679,12 @@ Calling this with no parameters toggles the random play feature.
 Randomness can be set to be specifically "on" or "off" by
 passing the scalar "on" or "off" to this method.
 
+=item loop
+
+This option controls the playlist's looping behaviour.  When called with
+a parameter, loop can be set to "all", "single", or "off".  Calling this
+with no parameters displays the current looping status.
+
 =item quit
 
 This unloads the MP3::Daemon::Simple that was automagically spawned
@@ -672,7 +706,7 @@ terms as Perl itself.
 
 =head1 AUTHOR
 
-John BEPPU <beppu@binq.org>
+John BEPPU <beppu@ax9.org>
 
 =head1 SEE ALSO
 
@@ -680,4 +714,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Simple.pm,v 1.11 2001/07/25 22:58:16 beppu Exp $
+# $Id: Simple.pm,v 1.13 2001/12/29 09:36:04 beppu Exp $

@@ -232,7 +232,7 @@ COPYLEFT
     as Perl itself.
 
 AUTHOR
-    John BEPPU <beppu@binq.org>
+    John BEPPU <beppu@ax9.org>
 
 SEE ALSO
     mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)

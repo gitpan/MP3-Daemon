@@ -462,6 +462,10 @@ in all its undaemonized glory.
 It's defining feature is the Pseudorandom Plaqueluster.  It's
 vintage pip.
 
+=head1 REQUIRES
+
+Audio::Play::MPG123, Term::ReadKey
+
 =head1 COPYRIGHT
 
 I am Free!

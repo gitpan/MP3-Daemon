@@ -13,7 +13,7 @@ use POSIX qw(setsid);
 use IO::Socket;
 use IO::Select;
 
-$VERSION = '0.60';
+$VERSION = '0.61';
 
 # constructor that does NOT daemonize itself
 #_______________________________________
@@ -178,8 +178,8 @@ sub main {
                 my $do_this = "_" . shift(@args);
 
                 if ($self->can($do_this)) {
-                    print STDERR "method => $do_this\n";
-                    print STDERR map { "| $_\n" } @args;
+		    # print STDERR "method => $do_this\n";
+		    # print STDERR map { "| $_\n" } @args;
                     eval { $self->$do_this(@args) };
                     if ($@) { warn($@); }
                 } else {
@@ -489,7 +489,7 @@ terms as Perl itself.
 
 =head1 AUTHOR
 
-John BEPPU <beppu@binq.org>
+John BEPPU <beppu@ax9.org>
 
 =head1 SEE ALSO
 
@@ -497,4 +497,4 @@ mpg123(1), Audio::Play::MPG123(3pm), pimp(1p), mpg123sh(1p), mp3(1p)
 
 =cut
 
-# $Id: Daemon.pm,v 1.21 2001/07/25 22:58:16 beppu Exp $
+# $Id: Daemon.pm,v 1.23 2001/12/29 09:35:12 beppu Exp $

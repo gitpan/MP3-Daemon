@@ -23,16 +23,18 @@ SYNOPSIS
 
         mp3 rw 2.00
         mp3 ff 32.32
-        mp3 jump 820
+        mp3 jump 420
         mp3 pause
         mp3 stop
         mp3 rand
+        mp3 loop single
 
     Getting information
 
         mp3 time
         mp3 info
         mp3 ls
+        mp3 help
 
     Unloading the daemon
 
@@ -121,6 +123,11 @@ COMMANDS
             Randomness can be set to be specifically "on" or "off" by
             passing the scalar "on" or "off" to this method.
 
+    loop    This option controls the playlist's looping behaviour. When
+            called with a parameter, loop can be set to "all", "single", or
+            "off". Calling this with no parameters displays the current
+            looping status.
+
     quit    This unloads the MP3::Daemon::Simple that was automagically
             spawned when you first invoked mp3.
 
@@ -169,7 +176,7 @@ COPYLEFT
     as Perl itself.
 
 AUTHOR
-    John BEPPU <beppu@binq.org>
+    John BEPPU <beppu@ax9.org>
 
 SEE ALSO
     My inspirations
@@ -190,6 +197,9 @@ SEE ALSO
                 isbn   => '1-55558-123-4',
             }
 
-    the newest version
-            http://opensource.lineo.com/cgi-bin/cvsweb/pm/MP3/Daemon/
+    cvsweb
+            http://lbox.org/cgi-bin/cvsweb.cgi/pm/MP3-Daemon/
+
+    the web site
+            http://beppu.lbox.org/proj/mp3-daemon.html
 
